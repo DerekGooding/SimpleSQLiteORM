@@ -17,7 +17,7 @@ public class Table<T>(DbConnectionManager db) where T : new()
 
         foreach (var prop in props)
         {
-            var columnDef = prop.Name + " " + SqliteType(prop.PropertyType);
+            var columnDef = prop.Name + " " + Table<T>.SqliteType(prop.PropertyType);
 
             if (Attribute.IsDefined(prop, typeof(PrimaryKeyAttribute)))
                 columnDef += " PRIMARY KEY";
@@ -29,8 +29,10 @@ public class Table<T>(DbConnectionManager db) where T : new()
         }
 
         var sql = $"CREATE TABLE IF NOT EXISTS {type.Name} ({string.Join(",", columns)});";
+        if (DbConnection.Connection is not SqliteConnection connection)
+            throw new Exception(sql);
 
-        using var cmd = DbConnection.Connection.CreateCommand();
+        using var cmd = connection.CreateCommand();
         cmd.CommandText = sql;
         cmd.ExecuteNonQuery();
     }
@@ -50,7 +52,9 @@ public class Table<T>(DbConnectionManager db) where T : new()
 
         var sql = $"INSERT INTO {type.Name} ({columns}) VALUES ({parameters});";
 
-        using var cmd = DbConnection.Connection.CreateCommand();
+        if (DbConnection.Connection is not SqliteConnection connection)
+            throw new Exception(sql);
+        using var cmd = connection.CreateCommand();
         cmd.CommandText = sql;
 
         foreach (var prop in props)
@@ -66,18 +70,16 @@ public class Table<T>(DbConnectionManager db) where T : new()
     {
         var type = typeof(T);
         var props = type.GetProperties();
-        var pk = props.FirstOrDefault(p => Attribute.IsDefined(p, typeof(PrimaryKeyAttribute)));
-
-        if (pk == null)
-            throw new Exception("PrimaryKey attribute required for Update.");
-
+        var pk = props.FirstOrDefault(p => Attribute.IsDefined(p, typeof(PrimaryKeyAttribute))) ?? throw new Exception("PrimaryKey attribute required for Update.");
         var setClauses = props
             .Where(p => !Attribute.IsDefined(p, typeof(PrimaryKeyAttribute)))
             .Select(p => $"{p.Name}=@{p.Name}");
 
         var sql = $"UPDATE {type.Name} SET {string.Join(",", setClauses)} WHERE {pk.Name}=@{pk.Name};";
 
-        using var cmd = DbConnection.Connection.CreateCommand();
+        if (DbConnection.Connection is not SqliteConnection connection)
+            throw new Exception(sql);
+        using var cmd = connection.CreateCommand();
         cmd.CommandText = sql;
 
         foreach (var prop in props)
@@ -93,14 +95,13 @@ public class Table<T>(DbConnectionManager db) where T : new()
     {
         var type = typeof(T);
         var props = type.GetProperties();
-        var pk = props.FirstOrDefault(p => Attribute.IsDefined(p, typeof(PrimaryKeyAttribute)));
-
-        if (pk == null)
-            throw new Exception("PrimaryKey attribute required for Delete.");
-
+        var pk = props.FirstOrDefault(p => Attribute.IsDefined(p, typeof(PrimaryKeyAttribute)))
+            ?? throw new Exception("PrimaryKey attribute required for Delete.");
         var sql = $"DELETE FROM {type.Name} WHERE {pk.Name}=@{pk.Name};";
 
-        using var cmd = DbConnection.Connection.CreateCommand();
+        if (DbConnection.Connection is not SqliteConnection connection)
+            throw new Exception(sql);
+        using var cmd = connection.CreateCommand();
         cmd.CommandText = sql;
         cmd.Parameters.AddWithValue($"@{pk.Name}", pk.GetValue(entity) ?? DBNull.Value);
 
@@ -110,7 +111,7 @@ public class Table<T>(DbConnectionManager db) where T : new()
     /// <summary>
     /// Helper: Maps C# type to SQLite type
     /// </summary>
-    private string SqliteType(Type type)
+    private static string SqliteType(Type type)
     {
         if (type == typeof(int) || type == typeof(long)) return "INTEGER";
         if (type == typeof(float) || type == typeof(double)) return "REAL";

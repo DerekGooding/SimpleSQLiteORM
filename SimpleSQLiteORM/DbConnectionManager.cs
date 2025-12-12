@@ -15,6 +15,7 @@ public class DbConnectionManager : IDisposable
 
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
         if (Connection != null)
         {
             Connection.Close();
