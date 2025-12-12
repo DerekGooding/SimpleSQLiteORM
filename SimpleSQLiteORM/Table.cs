@@ -70,7 +70,7 @@ public class Table<T>(DbConnectionManager db) where T : new()
     /// <summary>
     /// Insert list of entities into table
     /// </summary>
-    public void InsertMany(params T[] items)
+    public void InsertMany(IEnumerable<T> items)
     {
         if (DbConnection.Connection is not SqliteConnection connection)
             throw new Exception("No connection");
