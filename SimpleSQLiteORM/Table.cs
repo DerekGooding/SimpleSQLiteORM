@@ -1,6 +1,6 @@
 ﻿using SimpleSQLiteORM.Attributes;
 
-namespace SimpleSQLiteORM.Model;
+namespace SimpleSQLiteORM;
 
 public class Table<T>(DbConnectionManager db) where T : new()
 {

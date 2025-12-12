@@ -1,6 +1,4 @@
-﻿using SimpleSQLiteORM.Model;
-
-namespace SimpleSQLiteORM;
+﻿namespace SimpleSQLiteORM;
 
 public class QueryBuilder<T>(Table<T> table) where T : new()
 {
