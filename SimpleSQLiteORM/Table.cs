@@ -5,6 +5,9 @@ namespace SimpleSQLiteORM;
 
 public class Table<T>(DbConnectionManager db) where T : new()
 {
+    /// <summary>
+    /// Gets the database connection manager for this table.
+    /// </summary>
     public DbConnectionManager DbConnection { get; } = db;
 
     private readonly Type _type = typeof(T);
@@ -12,7 +15,8 @@ public class Table<T>(DbConnectionManager db) where T : new()
     private string TableName => _type.Name;
 
     /// <summary>
-    /// Creates table based on POCO attributes
+    /// Creates the table if it doesn't exist, mapping entity properties to columns.
+    /// Recognizes PrimaryKey and AutoIncrement attributes.
     /// </summary>
     public void CreateTable()
     {
@@ -42,8 +46,11 @@ public class Table<T>(DbConnectionManager db) where T : new()
     }
 
     /// <summary>
-    /// Insert entity into table
+    /// Inserts a single entity into the table.
+    /// Excludes properties marked with AutoIncrement attribute.
     /// </summary>
+    /// <param name="entity">The entity to insert</param>
+    /// <exception cref="Exception">Thrown when database connection is unavailable</exception>
     public void Insert(T entity)
     {
         var type = typeof(T);
@@ -68,8 +75,10 @@ public class Table<T>(DbConnectionManager db) where T : new()
     }
 
     /// <summary>
-    /// Insert list of entities into table
+    /// Inserts multiple entities into the table within a single transaction for better performance.
     /// </summary>
+    /// <param name="items">The collection of entities to insert</param>
+    /// <exception cref="Exception">Thrown when database connection is unavailable</exception>
     public void InsertMany(IEnumerable<T> items)
     {
         if (DbConnection.Connection is not SqliteConnection connection)
@@ -105,8 +114,10 @@ public class Table<T>(DbConnectionManager db) where T : new()
     }
 
     /// <summary>
-    /// Update entity based on primary key
+    /// Updates an existing entity in the table based on its primary key.
     /// </summary>
+    /// <param name="entity">The entity to update</param>
+    /// <exception cref="Exception">Thrown when no primary key is defined or connection is unavailable</exception>
     public void Update(T entity)
     {
         var type = typeof(T);
@@ -130,8 +141,12 @@ public class Table<T>(DbConnectionManager db) where T : new()
     }
 
     /// <summary>
-    /// Update list of entities based on primary key
+    /// Updates multiple entities in the table within a single transaction.
+    /// Each entity is updated based on its primary key.
     /// </summary>
+    /// <param name="items">The collection of entities to update</param>
+    /// <exception cref="Exception">Thrown when database connection is unavailable</exception>
+    /// <exception cref="InvalidOperationException">Thrown when no primary key is found</exception>
     public void UpdateMany(IEnumerable<T> items)
     {
         if (DbConnection.Connection is not SqliteConnection connection)
@@ -171,8 +186,10 @@ public class Table<T>(DbConnectionManager db) where T : new()
     }
 
     /// <summary>
-    /// Delete entity based on primary key
+    /// Deletes an entity from the table based on its primary key.
     /// </summary>
+    /// <param name="entity">The entity to delete</param>
+    /// <exception cref="Exception">Thrown when no primary key is defined or connection is unavailable</exception>
     public void Delete(T entity)
     {
         var type = typeof(T);
@@ -190,6 +207,11 @@ public class Table<T>(DbConnectionManager db) where T : new()
         cmd.ExecuteNonQuery();
     }
 
+    /// <summary>
+    /// Drops the entire table from the database if it exists.
+    /// WARNING: This operation is destructive and cannot be undone.
+    /// </summary>
+    /// <exception cref="Exception">Thrown when database connection is unavailable</exception>
     public void DropTable()
     {
         if (DbConnection.Connection is not SqliteConnection connection)
@@ -201,6 +223,11 @@ public class Table<T>(DbConnectionManager db) where T : new()
     }
 
     #region Helpers
+    /// <summary>
+    /// Maps a .NET type to its corresponding SQLite type.
+    /// </summary>
+    /// <param name="type">The .NET type to map</param>
+    /// <returns>The SQLite type string (INTEGER, REAL, TEXT, or BLOB)</returns>
     private static string SqliteType(Type type)
     {
         if (type == typeof(int) || type == typeof(long)) return "INTEGER";
@@ -211,10 +238,20 @@ public class Table<T>(DbConnectionManager db) where T : new()
         return "BLOB";
     }
 
+    /// <summary>
+    /// Gets the property marked with PrimaryKeyAttribute from the entity type.
+    /// </summary>
+    /// <returns>The primary key property or null if none found</returns>
     private static PropertyInfo? GetPrimaryKeyProperty()
         => typeof(T).GetProperties()
             .FirstOrDefault(p => p.GetCustomAttribute<PrimaryKeyAttribute>() != null);
 
+    /// <summary>
+    /// Extracts column names and values from an entity instance.
+    /// Excludes properties marked with IgnoreAttribute and properties with null values.
+    /// </summary>
+    /// <param name="item">The entity instance to extract data from</param>
+    /// <returns>A tuple containing lists of column names and their corresponding values</returns>
     private static (List<string> Columns, List<object> Values) GetColumnsAndValues(T item)
     {
         var props = typeof(T)

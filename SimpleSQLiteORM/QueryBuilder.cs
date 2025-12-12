@@ -1,5 +1,10 @@
 ﻿namespace SimpleSQLiteORM;
 
+/// <summary>
+/// Provides a fluent interface for building and executing SQLite queries on a specific table.
+/// Supports WHERE clauses, ORDER BY, and LIMIT operations.
+/// </summary>
+/// <typeparam name="T">The entity type (must have parameterless constructor)</typeparam>
 public class QueryBuilder<T>(Table<T> table) where T : new()
 {
     private readonly Table<T> _table = table;
@@ -8,8 +13,10 @@ public class QueryBuilder<T>(Table<T> table) where T : new()
     private int? _limit;
 
     /// <summary>
-    /// Adds a WHERE clause
+    /// Adds a WHERE clause to the query.
     /// </summary>
+    /// <param name="clause">The WHERE condition (e.g., "Age > 18")</param>
+    /// <returns>The query builder for method chaining</returns>
     public QueryBuilder<T> Where(string clause)
     {
         _whereClause = clause;
@@ -17,8 +24,11 @@ public class QueryBuilder<T>(Table<T> table) where T : new()
     }
 
     /// <summary>
-    /// Adds ORDER BY clause
+    /// Adds an ORDER BY clause to the query.
     /// </summary>
+    /// <param name="column">The column name to sort by</param>
+    /// <param name="ascending">True for ascending order, false for descending</param>
+    /// <returns>The query builder for method chaining</returns>
     public QueryBuilder<T> OrderBy(string column, bool ascending = true)
     {
         _orderByClause = $"ORDER BY {column} {(ascending ? "ASC" : "DESC")}";
@@ -26,8 +36,10 @@ public class QueryBuilder<T>(Table<T> table) where T : new()
     }
 
     /// <summary>
-    /// Limits the number of results
+    /// Limits the number of results returned by the query.
     /// </summary>
+    /// <param name="count">The maximum number of records to return</param>
+    /// <returns>The query builder for method chaining</returns>
     public QueryBuilder<T> Limit(int count)
     {
         _limit = count;
@@ -35,8 +47,9 @@ public class QueryBuilder<T>(Table<T> table) where T : new()
     }
 
     /// <summary>
-    /// Executes the query and returns a list of T
+    /// Executes the query and returns all matching records as a list.
     /// </summary>
+    /// <returns>A list of entities matching the query criteria</returns>
     public List<T> ToList()
     {
         var results = new List<T>();
@@ -73,8 +86,9 @@ public class QueryBuilder<T>(Table<T> table) where T : new()
     }
 
     /// <summary>
-    /// Gets the first record or default
+    /// Executes the query and returns the first matching record or null if none found.
     /// </summary>
+    /// <returns>The first matching entity or null</returns>
     public T? FirstOrDefault()
     {
         Limit(1);
