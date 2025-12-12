@@ -26,7 +26,7 @@ public class DatabaseService : IDatabaseService
             if (!dir.Exists)
                 dir.Create();
             if(!path.Value.Exists)
-                path.Value.Create();
+                path.Value.Create().Dispose();
         }
     }
 
@@ -81,7 +81,7 @@ public class DatabaseService : IDatabaseService
         {
             return new QueryBuilder<T>(table).ToList();
         }
-        catch
+        catch (SqliteException ex) when (ex.SqliteErrorCode == 1)
         {
             table.CreateTable();
             return new QueryBuilder<T>(table).ToList();

@@ -24,8 +24,6 @@ public class DbConnectionManager : IDisposable
     /// </summary>
     public SqliteConnection? Connection { get; private set; }
 
-    private SqliteTransaction? _transaction;
-
     /// <summary>
     /// Closes and disposes the database connection and any active transactions.
     /// </summary>
@@ -38,8 +36,5 @@ public class DbConnectionManager : IDisposable
             Connection.Dispose();
             Connection = null;
         }
-
-        _transaction?.Dispose();
-        _transaction = null;
     }
 }
