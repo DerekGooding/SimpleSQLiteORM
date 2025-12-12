@@ -13,6 +13,8 @@ public class DbConnectionManager : IDisposable
 
     public SqliteConnection? Connection { get; private set; }
 
+    private SqliteTransaction? _transaction;
+
     public void Dispose()
     {
         GC.SuppressFinalize(this);
@@ -22,5 +24,8 @@ public class DbConnectionManager : IDisposable
             Connection.Dispose();
             Connection = null;
         }
+
+        _transaction?.Dispose();
+        _transaction = null;
     }
 }
