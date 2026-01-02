@@ -254,9 +254,12 @@ public class Table<T>(DbConnectionManager db) where T : new()
     /// <returns>A tuple containing lists of column names and their corresponding values</returns>
     private static (List<string> Columns, List<object> Values) GetColumnsAndValues(T item)
     {
+        var pkProp = Table<T>.GetPrimaryKeyProperty();
         var props = typeof(T)
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .Where(p => p.CanRead && p.GetCustomAttribute<IgnoreAttribute>() == null)
+            .Where(p => p.CanRead &&
+                                  p.GetCustomAttribute<IgnoreAttribute>() == null &&
+                                  p != pkProp)
             .ToList();
 
         var columns = new List<string>(props.Count);
@@ -264,10 +267,8 @@ public class Table<T>(DbConnectionManager db) where T : new()
 
         foreach (var prop in props)
         {
-            if (prop.GetValue(item) is not object value)
-                continue;
             columns.Add(prop.Name);
-            values.Add(value);
+            values.Add(prop.GetValue(item) ?? DBNull.Value);
         }
 
         return (columns, values);

@@ -9,19 +9,19 @@ public class QueryBuilderTests
     [TestInitialize]
     public void TestInitialize()
     {
-        var connectionString = "Data Source=:memory:";
+        const string connectionString = ":memory:";
         _dbConnectionManager = new DbConnectionManager(connectionString);
         _table = new Table<TestModel>(_dbConnectionManager);
         _table.CreateTable();
 
         var models = new List<TestModel>
         {
-            new TestModel { Name = "FilterTest1", Value = 10 },
-            new TestModel { Name = "FilterTest2", Value = 20 },
-            new TestModel { Name = "FilterTest3", Value = 30 },
-            new TestModel { Name = "OrderB", Value = 1 },
-            new TestModel { Name = "OrderA", Value = 2 },
-            new TestModel { Name = "OrderC", Value = 3 }
+            new() { Name = "FilterTest1", Value = 10 },
+            new() { Name = "FilterTest2", Value = 20 },
+            new() { Name = "FilterTest3", Value = 30 },
+            new() { Name = "OrderB", Value = 1 },
+            new() { Name = "OrderA", Value = 2 },
+            new() { Name = "OrderC", Value = 3 }
         };
         _table.InsertMany(models);
     }
@@ -29,7 +29,7 @@ public class QueryBuilderTests
     [TestCleanup]
     public void TestCleanup()
     {
-        _dbConnectionManager.Dispose();
+        _dbConnectionManager?.Dispose();
     }
 
     [TestMethod]

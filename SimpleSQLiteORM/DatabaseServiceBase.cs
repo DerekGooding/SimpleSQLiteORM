@@ -4,7 +4,7 @@
 /// Provides a simple SQLite ORM service for performing CRUD operations on multiple named databases.
 /// Automatically manages table creation and database file initialization.
 /// </summary>
-public class DatabaseService : IDatabaseService
+public abstract class DatabaseServiceBase : IDatabaseService
 {
     private readonly IPathProvider _pathProvider;
     private FileInfo GetDatabasePath(string name)
@@ -17,7 +17,7 @@ public class DatabaseService : IDatabaseService
     /// </summary>
     /// <param name="pathProvider">Provider that supplies database file paths</param>
     /// <exception cref="ArgumentException">Thrown when database paths are invalid</exception>
-    public DatabaseService(IPathProvider pathProvider)
+    protected DatabaseServiceBase(IPathProvider pathProvider)
     {
         _pathProvider = pathProvider;
         foreach (var path in pathProvider.Paths)

@@ -6,7 +6,7 @@ namespace SimpleSQLiteORM.Tests;
 public class TestModel
 {
     [PrimaryKey, AutoIncrement]
-    public int Id { get; set; }
+    public long Id { get; set; }
 
     [NotNull]
     public string Name { get; set; } = string.Empty;

@@ -5,16 +5,16 @@ namespace SimpleSQLiteORM.Tests;
 [TestClass]
 public class DatabaseServiceTests
 {
-    private const string DbName = "test_db";
+    private const string _dbName = "test_db";
     private string _dbPath = null!;
-    private IDatabaseService _dbService = null!;
+    private TestDatabaseService _dbService = null!;
 
     [TestInitialize]
     public void TestInitialize()
     {
-        _dbPath = Path.Combine(Path.GetTempPath(), $"{DbName}.db");
+        _dbPath = Path.Combine(Path.GetTempPath(), $"{_dbName}_{Guid.NewGuid()}.db");
         var pathProvider = new TestPathProvider(_dbPath);
-        _dbService = new DatabaseService(pathProvider);
+        _dbService = new TestDatabaseService(pathProvider);
     }
 
     [TestCleanup]
@@ -30,10 +30,10 @@ public class DatabaseServiceTests
     {
         // Arrange
         var model = new TestModel { Name = "Test1", Value = 1.23 };
-        _dbService.Insert(model, DbName);
+        _dbService.Insert(model, _dbName);
 
         // Act
-        var results = _dbService.Read<TestModel>(DbName);
+        var results = _dbService.Read<TestModel>(_dbName);
 
         // Assert
         Assert.HasCount(1, results);
@@ -47,13 +47,13 @@ public class DatabaseServiceTests
         // Arrange
         var models = new List<TestModel>
         {
-            new TestModel { Name = "Test2", Value = 2.34 },
-            new TestModel { Name = "Test3", Value = 3.45 }
+            new() { Name = "Test2", Value = 2.34 },
+            new() { Name = "Test3", Value = 3.45 }
         };
-        _dbService.Insert(models, DbName);
+        _dbService.Insert(models, _dbName);
 
         // Act
-        var results = _dbService.Read<TestModel>(DbName);
+        var results = _dbService.Read<TestModel>(_dbName);
 
         // Assert
         Assert.HasCount(2, results);
@@ -64,37 +64,37 @@ public class DatabaseServiceTests
     {
         // Arrange
         var model = new TestModel { Name = "Test4", Value = 4.56 };
-        _dbService.Insert(model, DbName);
-        var items = _dbService.Read<TestModel>(DbName);
+        _dbService.Insert(model, _dbName);
+        var items = _dbService.Read<TestModel>(_dbName);
         var itemToUpdate = items[0];
         itemToUpdate.Name = "UpdatedName";
 
         // Act
-        _dbService.Update(itemToUpdate, DbName);
-        var updatedItems = _dbService.Read<TestModel>(DbName);
+        _dbService.Update(itemToUpdate, _dbName);
+        var updatedItems = _dbService.Read<TestModel>(_dbName);
 
         // Assert
         Assert.HasCount(1, updatedItems);
         Assert.AreEqual("UpdatedName", updatedItems[0].Name);
     }
-    
+
     [TestMethod]
     public void Update_MultipleItems_ShouldSucceed()
     {
         // Arrange
         var models = new List<TestModel>
         {
-            new TestModel { Name = "UpdateTest1", Value = 1.1 },
-            new TestModel { Name = "UpdateTest2", Value = 2.2 }
+            new() { Name = "UpdateTest1", Value = 1.1 },
+            new() { Name = "UpdateTest2", Value = 2.2 }
         };
-        _dbService.Insert(models, DbName);
-        var itemsToUpdate = _dbService.Read<TestModel>(DbName);
+        _dbService.Insert(models, _dbName);
+        var itemsToUpdate = _dbService.Read<TestModel>(_dbName);
         itemsToUpdate[0].Name = "Updated1";
         itemsToUpdate[1].Name = "Updated2";
 
         // Act
-        _dbService.Update(itemsToUpdate, DbName);
-        var updatedItems = _dbService.Read<TestModel>(DbName).OrderBy(i => i.Id).ToList();
+        _dbService.Update(itemsToUpdate, _dbName);
+        var updatedItems = _dbService.Read<TestModel>(_dbName).OrderBy(i => i.Id).ToList();
 
         // Assert
         Assert.HasCount(2, updatedItems);
@@ -107,13 +107,13 @@ public class DatabaseServiceTests
     {
         // Arrange
         var model = new TestModel { Name = "Test5", Value = 5.67 };
-        _dbService.Insert(model, DbName);
-        var items = _dbService.Read<TestModel>(DbName);
+        _dbService.Insert(model, _dbName);
+        var items = _dbService.Read<TestModel>(_dbName);
         var itemToDelete = items[0];
 
         // Act
-        _dbService.Delete(itemToDelete, DbName);
-        var remainingItems = _dbService.Read<TestModel>(DbName);
+        _dbService.Delete(itemToDelete, _dbName);
+        var remainingItems = _dbService.Read<TestModel>(_dbName);
 
         // Assert
         Assert.IsEmpty(remainingItems);
@@ -124,25 +124,25 @@ public class DatabaseServiceTests
     {
         // Arrange
         var model = new TestModel { Name = "Test6", Value = 6.78 };
-        _dbService.Insert(model, DbName);
+        _dbService.Insert(model, _dbName);
 
         // Act
-        _dbService.DropTable<TestModel>(DbName);
+        _dbService.DropTable<TestModel>(_dbName);
 
         // Assert
-        Assert.Throws<SqliteException>(() => _dbService.Read<TestModel>(DbName));
+        var result = _dbService.Read<TestModel>(_dbName); // This should recreate the table without throwing an exception
+        Assert.HasCount(0, result);
     }
 
     private class TestPathProvider : IPathProvider
     {
         public Dictionary<string, FileInfo> Paths { get; }
 
-        public TestPathProvider(string dbPath)
+        public TestPathProvider(string dbPath) => Paths = new Dictionary<string, FileInfo>
         {
-            Paths = new Dictionary<string, FileInfo>
-            {
-                { DbName, new FileInfo(dbPath) }
-            };
-        }
+            { _dbName, new FileInfo(dbPath) }
+        };
     }
+
+    private class TestDatabaseService(IPathProvider pathProvider) : DatabaseServiceBase(pathProvider);
 }
