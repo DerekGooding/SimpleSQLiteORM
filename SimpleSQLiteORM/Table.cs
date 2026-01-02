@@ -69,7 +69,7 @@ public class Table<T>(DbConnectionManager db) where T : new()
         cmd.CommandText = sql;
 
         foreach (var prop in props)
-            cmd.Parameters.AddWithValue($"@{prop.Name}", prop.GetValue(entity) ?? DBNull.Value);
+            cmd.Parameters.AddWithValue($"@{prop.Name}", NormalizeForSqlite(prop.GetValue(entity)));
 
         cmd.ExecuteNonQuery();
     }
@@ -107,7 +107,7 @@ public class Table<T>(DbConnectionManager db) where T : new()
 
         for (var i = 0; i < columns.Count; i++)
         {
-            cmd.Parameters.AddWithValue("@" + columns[i], values[i] ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@" + columns[i], NormalizeForSqlite(values[i]));
         }
 
         cmd.ExecuteNonQuery();
@@ -135,7 +135,7 @@ public class Table<T>(DbConnectionManager db) where T : new()
         cmd.CommandText = sql;
 
         foreach (var prop in props)
-            cmd.Parameters.AddWithValue($"@{prop.Name}", prop.GetValue(entity) ?? DBNull.Value);
+            cmd.Parameters.AddWithValue($"@{prop.Name}", NormalizeForSqlite(prop.GetValue(entity)));
 
         cmd.ExecuteNonQuery();
     }
@@ -177,10 +177,10 @@ public class Table<T>(DbConnectionManager db) where T : new()
 
         for (var i = 0; i < columns.Count; i++)
         {
-            cmd.Parameters.AddWithValue("@" + columns[i], values[i] ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@" + columns[i], NormalizeForSqlite(values[i]));
         }
 
-        cmd.Parameters.AddWithValue("@pk", keyValue ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@pk", NormalizeForSqlite(keyValue));
 
         cmd.ExecuteNonQuery();
     }
@@ -202,7 +202,7 @@ public class Table<T>(DbConnectionManager db) where T : new()
             throw new Exception("No connection");
         using var cmd = connection.CreateCommand();
         cmd.CommandText = sql;
-        cmd.Parameters.AddWithValue($"@{pk.Name}", pk.GetValue(entity) ?? DBNull.Value);
+        cmd.Parameters.AddWithValue($"@{pk.Name}", NormalizeForSqlite(pk.GetValue(entity)));
 
         cmd.ExecuteNonQuery();
     }
@@ -274,4 +274,17 @@ public class Table<T>(DbConnectionManager db) where T : new()
         return (columns, values);
     }
     #endregion
+
+    private static object NormalizeForSqlite(object? value) => value == null ? DBNull.Value
+    : value switch
+    {
+        bool b => b ? 1L : 0L,
+        byte b => (long)b,
+        short s => (long)s,
+        int i => (long)i,
+        uint u => (long)u,
+        long l => l,
+        Enum e => Convert.ToInt64(e),
+        _ => value
+    };
 }

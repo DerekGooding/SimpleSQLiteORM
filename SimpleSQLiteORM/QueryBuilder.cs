@@ -77,7 +77,11 @@ public class QueryBuilder<T>(Table<T> table) where T : new()
             foreach (var prop in props)
             {
                 if (!reader.IsDBNull(reader.GetOrdinal(prop.Name)))
-                    prop.SetValue(obj, reader[prop.Name]);
+                {
+                    var raw = reader[prop.Name];
+                    var converted = ConvertForProperty(raw, prop.PropertyType);
+                    prop.SetValue(obj, converted);
+                }
             }
             results.Add(obj);
         }
@@ -93,5 +97,29 @@ public class QueryBuilder<T>(Table<T> table) where T : new()
     {
         Limit(1);
         return ToList().FirstOrDefault();
+    }
+
+    private static object? ConvertForProperty(object value, Type targetType)
+    {
+        if (value is null or DBNull)
+            return value;
+
+        var valueType = value.GetType();
+
+        if (targetType == valueType)
+            return value;
+
+        if (targetType.IsEnum)
+            return Enum.ToObject(targetType, value);
+
+        try
+        {
+            return Convert.ChangeType(value, targetType);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidCastException(
+                $"Cannot convert value '{value}' ({valueType}) to {targetType}", ex);
+        }
     }
 }

@@ -6,12 +6,14 @@ namespace SimpleSQLiteORM.Tests;
 public class TestModel
 {
     [PrimaryKey, AutoIncrement]
-    public long Id { get; set; }
+    public int Id { get; set; }
 
     [NotNull]
     public string Name { get; set; } = string.Empty;
 
     public double Value { get; set; }
+
+    public int IntValue { get; set; }
 
     [SimpleSQLiteORM.Attributes.Ignore]
     public string IgnoredProperty { get; set; } = string.Empty;
